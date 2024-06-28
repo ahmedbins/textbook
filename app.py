@@ -1,7 +1,38 @@
 import streamlit as st
+import requests
+from bs4 import BeautifulSoup
 
-# Define the password
-PASSWORD = "30DayMCAT"
+# Function to get Wikipedia summary
+def get_wikipedia_summary(chapter):
+    search_url = f"https://en.wikipedia.org/wiki/{chapter.replace(' ', '_')}"
+    response = requests.get(search_url)
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.text, 'html.parser')
+        paragraphs = soup.find_all('p')
+        if paragraphs:
+            return paragraphs[0].text
+        else:
+            return "No content found"
+    else:
+        return "No content found"
+
+# Function to get YouTube videos (URLs for embedding)
+def get_youtube_videos(query, max_results=2):
+    search_url = f"https://www.youtube.com/results?search_query={query.replace(' ', '+')}"
+    response = requests.get(search_url)
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.text, 'html.parser')
+        videos = soup.find_all('a', {'href': True})
+        video_urls = []
+        for video in videos:
+            href = video['href']
+            if '/watch?v=' in href:
+                video_urls.append(f"https://www.youtube.com{href}")
+                if len(video_urls) >= max_results:
+                    break
+        return video_urls
+    else:
+        return []
 
 # Function to check the password
 def check_password():
@@ -29,6 +60,9 @@ def check_password():
     else:
         # Password correct.
         return True
+
+# Define the password
+PASSWORD = "30DayMCAT"
 
 if check_password():
     # Define the table of contents as a dictionary
@@ -128,8 +162,15 @@ if check_password():
     # Display the selected section and chapter
     st.title(f"{section} - {chapter}")
 
-    # Add content for each chapter here
-    # For now, just display a placeholder text
-    st.write(f"Content for {chapter} will be added here.")
+    # Fetch and display Wikipedia summary
+    summary = get_wikipedia_summary(chapter)
+    st.header("Wikipedia Summary")
+    st.write(summary)
+
+    # Fetch and display YouTube videos
+    st.header("YouTube Videos")
+    videos = get_youtube_videos(chapter)
+    for video_url in videos:
+        st.video(video_url)
 
     # To run the app, save this code in a file, e.g., `textbook_app.py`, and run `streamlit run textbook_app.py` in your terminal.
