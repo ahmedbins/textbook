@@ -10,7 +10,10 @@ def get_wikipedia_summary(chapter):
         soup = BeautifulSoup(response.text, 'html.parser')
         paragraphs = soup.find_all('p')
         if paragraphs:
-            return paragraphs[0].text
+            summary = ""
+            for p in paragraphs[:3]:  # Get first 3 paragraphs
+                summary += p.text
+            return summary
         else:
             return "No content found"
     else:
